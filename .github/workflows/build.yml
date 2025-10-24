@@ -14,41 +14,92 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.11"]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Show repo tree (debug)
+        run: |
+          echo "== Repo files =="
+          ls -la
+          echo "================"
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Tk on Linux
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Linux system deps
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
+          # Tk bindings for matplotlib TkAgg
           sudo apt-get install -y python3-tk
+          # Helps PyInstaller relinking
+          sudo apt-get install -y patchelf
 
-      - name: Install dependencies
+      - name: Install Python deps
+        shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            echo "requirements.txt not found, installing numpy+matplotlib…"
+            pip install numpy matplotlib
+          fi
+          pip install pyinstaller
+
+      - name: Choose app file
+        id: appfile
+        shell: bash
+        run: |
+          APP="nuclear_h2_app.py"
+          if [ ! -f "$APP" ]; then
+            # Fall back: first .py at repo root
+            ALT=$(ls -1 *.py 2>/dev/null | head -n1 || true)
+            if [ -z "$ALT" ]; then
+              echo "No Python file found at repo root. Fail."
+              exit 1
+            fi
+            APP="$ALT"
+          fi
+          echo "Using app file: $APP"
+          echo "APP_FILE=$APP" >> $GITHUB_OUTPUT
 
       - name: Build (PyInstaller)
         shell: bash
         run: |
+          APP="${{ steps.appfile.outputs.APP_FILE }}"
           if [ -f NuclearH2.spec ]; then
+            echo "Building with spec file…"
             pyinstaller NuclearH2.spec
           else
-            pyinstaller --name NuclearH2 --onefile --windowed nuclear_h2_app.py
+            echo "Building with CLI…"
+            pyinstaller \
+              --name NuclearH2 \
+              --onefile \
+              --windowed \
+              --hidden-import matplotlib.backends.backend_tkagg \
+              --hidden-import tkinter \
+              "$APP"
           fi
+          echo "Built files:"; ls -la dist || true
 
-      - name: Archive artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NuclearH2-${{ runner.os }}
-          path: |
-            dist/**
+          name: NuclearH2-${{ runner.os }}-${{ github.ref_name }}
+          path: dist/**
 
   release:
     name: Publish Release
