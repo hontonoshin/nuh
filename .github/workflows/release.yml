@@ -1,0 +1,44 @@
+name: Build & Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  build:
+    name: Build for release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python-version: [ '3.11' ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk patchelf
+      - run: |
+          python -m pip install --upgrade pip wheel
+          pip install -r requirements.txt
+      - run: |
+          pyinstaller --noconfirm --clean --onefile --windowed \
+            --name NuclearHydrogen main.py
+      - name: Archive binaries with OS suffix
+        shell: bash
+        run: |
+          mkdir -p release
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp dist/NuclearHydrogen.exe release/NuclearHydrogen-windows.exe
+          else
+            cp dist/NuclearHydrogen release/NuclearHydrogen-linux
+          fi
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
