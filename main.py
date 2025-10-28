@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""
-Nuclear-Enabled Hydrogen – Single-Page App (2025-10-24)
--------------------------------------------------------
-Inputs + Run + Plot + Conclusions + Problem Solver on ONE screen.
-
-Requirements: Python 3.10+, numpy, matplotlib (TkAgg).
-"""
 
 import csv
 from dataclasses import dataclass
@@ -69,10 +62,10 @@ def si_cycle_efficiency(temp_C: float) -> float:
 
 
 PATHWAYS: Dict[str, Pathway] = {
-    "ALK": Pathway("ALK", "electrolysis", "Alkaline Electrolysis"),
-    "PEM": Pathway("PEM", "electrolysis", "PEM Electrolysis"),
-    "SOEC": Pathway("SOEC", "electrolysis", "High-Temperature SOEC"),
-    "SI":   Pathway("SI",   "thermochemical", "Thermochemical S–I Cycle"),
+    "ALK": Pathway("ALK", "elektroliz", "Alkalin Electrolizi"),
+    "PEM": Pathway("PEM", "elektroliz", "PEM elektrolizi"),
+    "SOEC": Pathway("SOEC", "elektroliz", "yuqori temperaturaviy SOEC"),
+    "SI":   Pathway("SI",   "termokimyoviy", "Termokimyoviy S–I sikl"),
 }
 
 PRESET_REACTORS: Dict[str, Reactor] = {
@@ -207,7 +200,7 @@ def simulate(reac: Reactor,
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Nuclear-Enabled Hydrogen – Single Page")
+        self.title("Nuclear-Enabled Hydrogen")
         self.geometry("1350x850")
 
         # Default economics/ops
@@ -317,11 +310,11 @@ class App(tk.Tk):
         left = ttk.Frame(root)
         left.grid(row=0, column=0, sticky="nsw", padx=(0, 10))
         # Reactor
-        lf_reac = ttk.Labelframe(left, text="Reactor (entries are live)")
+        lf_reac = ttk.Labelframe(left, text="Reactor parametrlari")
         lf_reac.pack(fill=tk.X, pady=6)
         # preset
         self.preset_var = tk.StringVar(value="SMR-PWR")
-        ttk.Label(lf_reac, text="Preset").grid(row=0, column=0, sticky="w")
+        ttk.Label(lf_reac, text="Tip").grid(row=0, column=0, sticky="w")
         cb = ttk.Combobox(lf_reac, textvariable=self.preset_var,
                           values=list(PRESET_REACTORS.keys()),
                           width=12, state="readonly")
@@ -336,10 +329,10 @@ class App(tk.Tk):
         self.preset_var.trace_add("write", on_preset)
 
         rows = [
-            ("Name", self.reac_name_var),
-            ("Thermal Power (MWt)", self.th_var),
-            ("Electric Efficiency (0–1)", self.eta_var),
-            ("Outlet Temp (°C)", self.tout_var),
+            ("Nomi", self.reac_name_var),
+            ("Termal quvvat (MWt)", self.th_var),
+            ("Elektrik F.I.K. (0–1)", self.eta_var),
+            (" Temperatura (°C)", self.tout_var),
             ("Capacity Factor (0–1)", self.cf_var),
         ]
         for i, (lbl, var) in enumerate(rows, start=1):
@@ -348,9 +341,9 @@ class App(tk.Tk):
         lf_reac.grid_columnconfigure(1, weight=1)
 
         # Pathway & Ops
-        lf_ops = ttk.Labelframe(left, text="Pathway & Operation")
+        lf_ops = ttk.Labelframe(left, text="Metodlar va Operatsiyalar")
         lf_ops.pack(fill=tk.X, pady=6)
-        ttk.Label(lf_ops, text="Pathway").grid(row=0, column=0, sticky="w")
+        ttk.Label(lf_ops, text="Metod").grid(row=0, column=0, sticky="w")
         ttk.Combobox(lf_ops, textvariable=self.path_var,
                      values=list(PATHWAYS.keys()),
                      width=10, state="readonly").grid(row=0, column=1, sticky="ew", pady=2)
@@ -362,14 +355,14 @@ class App(tk.Tk):
         lf_ops.grid_columnconfigure(1, weight=1)
 
         # Economics
-        lf_econ = ttk.Labelframe(left, text="Economics")
+        lf_econ = ttk.Labelframe(left, text="Iqtisodiy qism")
         lf_econ.pack(fill=tk.X, pady=6)
         econ = [
-            ("Electricity ($/MWh)", self.price_elec),
-            ("Heat ($/MWhth)", self.price_heat),
+            ("Elektr narxi ($/MWh)", self.price_elec),
+            ("Issiqlik ($/MWhth)", self.price_heat),
             ("CAPEX ($/kW)", self.capex),
             ("OPEX (frac/yr)", self.opex_frac),
-            ("Lifetime (yr)", self.lifetime),
+            ("Lifetime (yil)", self.lifetime),
             ("Discount (frac)", self.discount),
         ]
         for i, (lbl, var) in enumerate(econ):
@@ -378,23 +371,23 @@ class App(tk.Tk):
         lf_econ.grid_columnconfigure(1, weight=1)
 
         # Actions
-        lf_act = ttk.Labelframe(left, text="Actions")
+        lf_act = ttk.Labelframe(left, text="Parameterlar")
         lf_act.pack(fill=tk.X, pady=6)
         self.var_plot_update = tk.BooleanVar(value=True)
         self.var_auto_conc   = tk.BooleanVar(value=True)
-        ttk.Checkbutton(lf_act, text="Update Plot on Run", variable=self.var_plot_update).grid(row=0, column=0, sticky="w")
-        ttk.Checkbutton(lf_act, text="Refresh Conclusions on Run", variable=self.var_auto_conc).grid(row=1, column=0, sticky="w")
-        ttk.Button(lf_act, text="Run Simulation", command=self.on_run).grid(row=2, column=0, sticky="ew", pady=4)
+        ttk.Checkbutton(lf_act, text="Grafikni yangilash", variable=self.var_plot_update).grid(row=0, column=0, sticky="w")
+        ttk.Checkbutton(lf_act, text="Xulosani yangilash", variable=self.var_auto_conc).grid(row=1, column=0, sticky="w")
+        ttk.Button(lf_act, text="Start", command=self.on_run).grid(row=2, column=0, sticky="ew", pady=4)
 
         # Solver
-        lf_solv = ttk.Labelframe(left, text="Problem Solver (meet target at min LCOH)")
+        lf_solv = ttk.Labelframe(left, text="Kalkulyator (min LCOH)")
         lf_solv.pack(fill=tk.X, pady=10)
         self.target_h2 = tk.DoubleVar(value=10000.0)
-        ttk.Label(lf_solv, text="Target H₂ (kg/h)").grid(row=0, column=0, sticky="w")
+        ttk.Label(lf_solv, text="Rejalashtirilayotgan H₂ (kg/h)").grid(row=0, column=0, sticky="w")
         ttk.Entry(lf_solv, textvariable=self.target_h2, width=12).grid(row=0, column=1, sticky="ew")
         self.var_apply_best = tk.BooleanVar(value=True)
-        ttk.Checkbutton(lf_solv, text="Apply best to inputs & refresh", variable=self.var_apply_best).grid(row=1, column=0, columnspan=2, sticky="w")
-        ttk.Button(lf_solv, text="Solve", command=self.solve_for_target).grid(row=2, column=0, columnspan=2, sticky="ew", pady=4)
+        ttk.Checkbutton(lf_solv, text="Eng muqobil variantlarni qo'llash & grafikni yangilash", variable=self.var_apply_best).grid(row=1, column=0, columnspan=2, sticky="w")
+        ttk.Button(lf_solv, text="Hisoblash", command=self.solve_for_target).grid(row=2, column=0, columnspan=2, sticky="ew", pady=4)
         self.txt_solver = tk.Text(lf_solv, height=10, wrap=tk.WORD)
         self.txt_solver.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(4,0))
         for c in (0,1):
@@ -407,7 +400,7 @@ class App(tk.Tk):
         right.grid_columnconfigure(0, weight=1)
 
         # Results
-        lf_res = ttk.Labelframe(right, text="Results")
+        lf_res = ttk.Labelframe(right, text="Natijalar")
         lf_res.grid(row=0, column=0, sticky="ew", pady=(0,6))
         self.var_h2  = tk.StringVar(value="-")
         self.var_eta = tk.StringVar(value="-")
@@ -415,18 +408,18 @@ class App(tk.Tk):
         self.var_pe  = tk.StringVar(value="-")
         self.var_q   = tk.StringVar(value="-")
         items = [("Hydrogen Rate", self.var_h2),
-                 ("System Efficiency (LHV)", self.var_eta),
+                 ("Sistema effektivligi (LHV)", self.var_eta),
                  ("LCOH", self.var_lcoh),
-                 ("Electric Power", self.var_pe),
+                 ("Elektr quvvati", self.var_pe),
                  ("Thermal to Process", self.var_q)]
         for i,(lbl,var) in enumerate(items):
             ttk.Label(lf_res, text=lbl+":").grid(row=i, column=0, sticky="w", padx=4, pady=2)
             ttk.Label(lf_res, textvariable=var, font=("TkDefaultFont", 11, "bold")).grid(row=i, column=1, sticky="w")
-        ttk.Button(lf_res, text="Reset Outputs", command=self.reset_outputs).grid(row=0, column=2, rowspan=2, padx=6)
-        ttk.Button(lf_res, text="Export Report", command=self.export_report).grid(row=2, column=2, rowspan=2, padx=6)
+        ttk.Button(lf_res, text="O'chirish", command=self.reset_outputs).grid(row=0, column=2, rowspan=2, padx=6)
+        ttk.Button(lf_res, text="Natijalarni saqlash", command=self.export_report).grid(row=2, column=2, rowspan=2, padx=6)
 
         # Plot
-        lf_plot = ttk.Labelframe(right, text="Plot: H₂ (solid) and LCOH (dashed) vs. split")
+        lf_plot = ttk.Labelframe(right, text="Plot: H₂ (uzluksiz chiziqlar) and LCOH (nuqtali chiziq) vs. split")
         lf_plot.grid(row=1, column=0, sticky="nsew")
         self.fig = Figure(figsize=(7.8, 4.6), dpi=100)
         self.ax = self.fig.add_subplot(111)
@@ -435,20 +428,20 @@ class App(tk.Tk):
 
         plot_ctrl = ttk.Frame(lf_plot)
         plot_ctrl.pack(side=tk.RIGHT, fill=tk.Y, padx=6)
-        ttk.Button(plot_ctrl, text="Scan Current Pathway", command=self.scan_current).pack(fill=tk.X, pady=4)
-        ttk.Button(plot_ctrl, text="Compare All Pathways", command=self.compare_all).pack(fill=tk.X, pady=4)
+        ttk.Button(plot_ctrl, text="Joriy metodni tahlil qilish", command=self.scan_current).pack(fill=tk.X, pady=4)
+        ttk.Button(plot_ctrl, text="Barcha metodlarni solishtirish", command=self.compare_all).pack(fill=tk.X, pady=4)
         ttk.Button(plot_ctrl, text="Clear Plot", command=self.clear_plot).pack(fill=tk.X, pady=4)
-        ttk.Button(plot_ctrl, text="Save PNG", command=self.save_plot).pack(fill=tk.X, pady=4)
+        ttk.Button(plot_ctrl, text="png fayl ko'rinishida saqlash", command=self.save_plot).pack(fill=tk.X, pady=4)
 
         # Conclusions
-        lf_conc = ttk.Labelframe(right, text="Conclusions")
+        lf_conc = ttk.Labelframe(right, text="Xulosalar")
         lf_conc.grid(row=2, column=0, sticky="ew", pady=(6,0))
         self.txt_conclusion = tk.Text(lf_conc, height=7, wrap=tk.WORD)
         self.txt_conclusion.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         conc_btns = ttk.Frame(lf_conc)
         conc_btns.pack(fill=tk.X)
-        ttk.Button(conc_btns, text="Generate from current inputs", command=self._gen_conclusions_from_current).pack(side=tk.LEFT, padx=4, pady=4)
-        ttk.Button(conc_btns, text="Clear", command=lambda: self._set_text(self.txt_conclusion, "")).pack(side=tk.LEFT, padx=4, pady=4)
+        ttk.Button(conc_btns, text="Joriy parametrlar bo'yicha xulosa", command=self._gen_conclusions_from_current).pack(side=tk.LEFT, padx=4, pady=4)
+        ttk.Button(conc_btns, text="Tozalash", command=lambda: self._set_text(self.txt_conclusion, "")).pack(side=tk.LEFT, padx=4, pady=4)
 
     # ---------- actions ----------
     def on_run(self):
@@ -483,7 +476,7 @@ class App(tk.Tk):
         self.ax.plot(fs, h2, label=f"H2 – {code}")
         self.ax.plot(fs, lcoh, linestyle="--", label=f"LCOH – {code}")
         self.ax.set_xlabel("Split to Electricity f")
-        self.ax.set_ylabel("kg H₂ / h (solid) and $/kg (dashed)")
+        self.ax.set_ylabel("kg H₂ / h (uzluksiz chiziq) and $/kg (nuqtali chiziq)")
         self.ax.legend()
         self.ax.grid(True, alpha=0.3)
         self.canvas.draw()
@@ -508,7 +501,7 @@ class App(tk.Tk):
             self.ax.plot(fs, h2, label=f"H2 – {code}")
             self.ax.plot(fs, lcoh, linestyle="--", label=f"LCOH – {code}")
         self.ax.set_xlabel("Split to Electricity f")
-        self.ax.set_ylabel("kg H₂ / h (solid) and $/kg (dashed)")
+        self.ax.set_ylabel("kg H₂ / h (uzluksiz chiziq ) and $/kg (nuqtali chiziq)")
         self.ax.legend(ncol=2)
         self.ax.grid(True, alpha=0.3)
         self.canvas.draw()
@@ -522,7 +515,7 @@ class App(tk.Tk):
                                             filetypes=[["PNG", "*.png"]])
         if path:
             self.fig.savefig(path, bbox_inches="tight")
-            messagebox.showinfo("Saved", f"Plot saved to {path}")
+            messagebox.showinfo("Muvaffaqiyatli saqlandi", f"Grafik {path} ga saqlandi")
 
     # ---------- solver ----------
     def solve_for_target(self):
@@ -551,18 +544,18 @@ class App(tk.Tk):
 
         if best is None:
             self._set_text(self.txt_solver,
-                           "No configuration met the target.\n"
-                           "Increase reactor power, relax target, or pick SOEC/S–I.")
+                           "Joriy parametrlar bilan rejalashtirilgan miqdorga erishish imkoni yo'q .\n"
+                           "Reaktor quvvatini oshiring, rejani kamaytiring yoki boshqa metodni tanlang")
             return
 
         text = (
-            "Best configuration meeting target (min LCOH):\n"
-            f"• Pathway: {PATHWAYS[best['pathway']].display} ({best['pathway']})\n"
+            "Rejaga mos keladigan eng maqbul parametrlar (min LCOH):\n"
+            f"• Metod: {PATHWAYS[best['pathway']].display} ({best['pathway']})\n"
             f"• Split f: {best['split']:.2f}\n"
             f"• H₂: {best['h2_kg_per_h']:,.1f} kg/h\n"
             f"• LCOH: ${best['lcoh_USD_per_kg']:,.2f}/kg\n"
             f"• η(LHV): {best['eta_sys']*100:,.1f}%\n"
-            f"• Electric: {best['Pe_MWe']:,.2f} MWe, Heat: {best['Q_MWt']:,.2f} MWt\n"
+            f"• Elektr: {best['Pe_MWe']:,.2f} MWe, Issiqlik: {best['Q_MWt']:,.2f} MWt\n"
         )
         self._set_text(self.txt_solver, text)
 
@@ -583,12 +576,12 @@ class App(tk.Tk):
 
     def export_report(self):
         if self._last_res is None:
-            messagebox.showwarning("Export", "Run a simulation first.")
+            messagebox.showwarning("Export", "Avval simulyatsiyani ishga tushiring.")
             return
         # Pick base path (CSV); also save PNG if plot exists
         csv_path = filedialog.asksaveasfilename(defaultextension=".csv",
                                                filetypes=[["CSV", "*.csv"]],
-                                               title="Save report (CSV)")
+                                               title="CSV ko'rinishida saqlash")
         if not csv_path:
             return
         # Gather inputs
