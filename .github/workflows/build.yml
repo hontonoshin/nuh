@@ -1,4 +1,4 @@
-name: Build desktop executables
+name: Build Windows EXE
 
 on:
   push:
@@ -6,71 +6,35 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  build:
-    name: Build (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            py: '3.11'
-            use_system_python: false
-          - os: ubuntu-latest
-            py: 'system'
-            use_system_python: true
+  build-windows:
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # --- Windows: use setup-python
-      - name: Set up Python (Windows)
-        if: matrix.use_system_python == false
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.py }}
+          python-version: '3.11'
 
-      # --- Linux: use system Python + install Tk for it
-      - name: Install system packages (Linux)
-        if: matrix.use_system_python == true
+      - name: Install deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip python3-tk patchelf
-
-      # Upgrade pip and install deps (use the right interpreter per-OS)
-      - name: Install Python deps
-        run: |
-          if [ "${{ runner.os }}" = "Linux" ]; then
-            python3 -m pip install --upgrade pip wheel
-            python3 -m pip install -r requirements.txt
-          else
-            python -m pip install --upgrade pip wheel
+          python -m pip install --upgrade pip wheel
+          if (Test-Path "requirements.txt") {
             pip install -r requirements.txt
-          fi
-        shell: bash
+          } else {
+            pip install pyinstaller matplotlib numpy
+          }
 
-      # Build with PyInstaller using the correct interpreter
       - name: Build with PyInstaller
-        env:
-          MPLBACKEND: TkAgg
+        # --windowed hides the console; remove it if you want a console window
         run: |
-          if [ "${{ runner.os }}" = "Linux" ]; then
-            python3 -m PyInstaller --noconfirm --clean --onefile --windowed \
-              --name NuclearHydrogen main.py
-          else
-            pyinstaller --noconfirm --clean --onefile --windowed \
-              --name NuclearHydrogen main.py
-          fi
-        shell: bash
+          pyinstaller --noconfirm --clean --onefile --windowed `
+            --name NuclearHydrogen main.py
 
-      - name: List build outputs
-        shell: bash
-        run: |
-          echo "Dist contents:"
-          ls -lah dist || dir dist
-
-      - name: Upload artifact
+      - name: Upload .exe artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NuclearHydrogen-${{ runner.os }}
-          path: dist/**
+          name: NuclearHydrogen-Windows
+          path: dist\NuclearHydrogen.exe
