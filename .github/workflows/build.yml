@@ -11,34 +11,57 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
-        python-version: [ '3.11' ]
+        include:
+          - os: windows-latest
+            py: '3.11'
+            use_system_python: false
+          - os: ubuntu-latest
+            py: 'system'
+            use_system_python: true
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      # --- Windows: use setup-python
+      - name: Set up Python (Windows)
+        if: matrix.use_system_python == false
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.py }}
 
-      # Linux-only system deps for TkAgg + PyInstaller
+      # --- Linux: use system Python + install Tk for it
       - name: Install system packages (Linux)
-        if: runner.os == 'Linux'
+        if: matrix.use_system_python == true
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-tk patchelf
+          sudo apt-get install -y python3-pip python3-tk patchelf
 
-      - name: Upgrade pip and install Python deps
+      # Upgrade pip and install deps (use the right interpreter per-OS)
+      - name: Install Python deps
         run: |
-          python -m pip install --upgrade pip wheel
-          pip install -r requirements.txt
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            python3 -m pip install --upgrade pip wheel
+            python3 -m pip install -r requirements.txt
+          else
+            python -m pip install --upgrade pip wheel
+            pip install -r requirements.txt
+          fi
+        shell: bash
 
+      # Build with PyInstaller using the correct interpreter
       - name: Build with PyInstaller
+        env:
+          MPLBACKEND: TkAgg
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed \
-            --name NuclearHydrogen main.py
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            python3 -m PyInstaller --noconfirm --clean --onefile --windowed \
+              --name NuclearHydrogen main.py
+          else
+            pyinstaller --noconfirm --clean --onefile --windowed \
+              --name NuclearHydrogen main.py
+          fi
+        shell: bash
 
       - name: List build outputs
         shell: bash
@@ -50,5 +73,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: NuclearHydrogen-${{ runner.os }}
-          path: |
-            dist/**
+          path: dist/**
