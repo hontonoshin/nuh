@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import csv
 from dataclasses import dataclass
 from typing import Dict, Tuple
@@ -382,7 +380,7 @@ class App(tk.Tk):
         # Solver
         lf_solv = ttk.Labelframe(left, text="Kalkulyator (min LCOH)")
         lf_solv.pack(fill=tk.X, pady=10)
-        self.target_h2 = tk.DoubleVar(value=10000.0)
+        self.target_h2 = tk.DoubleVar(value=100.0)
         ttk.Label(lf_solv, text="Rejalashtirilayotgan H₂ (kg/h)").grid(row=0, column=0, sticky="w")
         ttk.Entry(lf_solv, textvariable=self.target_h2, width=12).grid(row=0, column=1, sticky="ew")
         self.var_apply_best = tk.BooleanVar(value=True)
@@ -419,7 +417,7 @@ class App(tk.Tk):
         ttk.Button(lf_res, text="Natijalarni saqlash", command=self.export_report).grid(row=2, column=2, rowspan=2, padx=6)
 
         # Plot
-        lf_plot = ttk.Labelframe(right, text="Plot: H₂ (uzluksiz chiziqlar) and LCOH (nuqtali chiziq) vs. split")
+        lf_plot = ttk.Labelframe(right, text="Grafikda: H₂ (uzluksiz chiziqlar) and LCOH (nuqtali chiziq) vs. split")
         lf_plot.grid(row=1, column=0, sticky="nsew")
         self.fig = Figure(figsize=(7.8, 4.6), dpi=100)
         self.ax = self.fig.add_subplot(111)
@@ -617,7 +615,7 @@ class App(tk.Tk):
             self.fig.savefig(png_path, bbox_inches="tight")
         except Exception:
             pass
-        messagebox.showinfo("Export", f"Report saved to {csv_path} (plot PNG alongside if available).")
+        messagebox.showinfo("Export", f"Hisobot  {csv_path} muvaffaqiyatli saqlandi.")
 
 # --------------
 # Entrypoint
